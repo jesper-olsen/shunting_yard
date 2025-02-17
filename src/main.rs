@@ -1,5 +1,6 @@
 use std::io::{self, Write};
-
+mod error;
+use error::{Error, Result};
 mod scanner;
 use scanner::{OperatorType::*, Token, Token::*};
 
@@ -19,7 +20,6 @@ fn repl() {
         if input.is_empty() {
             continue;
         }
-
         let mut scanner = scanner::Scanner::new(input);
         let infix_tokens = scanner.scan_tokens().unwrap();
         println!("Infix input:{infix_tokens:?}");
@@ -36,7 +36,7 @@ fn repl() {
     }
 }
 
-fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>, String> {
+fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>> {
     let mut output_queue: Vec<Token> = Vec::new();
     let mut operator_stack: Vec<Token> = Vec::new();
     for token in tokens {
@@ -45,7 +45,7 @@ fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>, String> {
             LeftParen | Function(_) => operator_stack.push(token),
             RightParen => loop {
                 let Some(optoken) = operator_stack.pop() else {
-                    return Err("mismatched parentheses".to_string());
+                    return Err(Error::MismatchedParentheses);
                 };
                 if optoken == LeftParen {
                     break;
@@ -79,7 +79,7 @@ fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>, String> {
 
     while let Some(token) = operator_stack.pop() {
         match token {
-            Token::LeftParen => return Err("mismatched parentheses".to_string()),
+            Token::LeftParen => return Err(Error::MismatchedParentheses),
             _ => output_queue.push(token),
         }
     }
@@ -87,7 +87,7 @@ fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>, String> {
     Ok(output_queue)
 }
 
-fn eval_rpn(output_queue: Vec<Token>) -> Result<f64, String> {
+fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
     // evaluate expression in Reverse Polish Notation
     let mut stack = Vec::new();
     for token in output_queue {
@@ -95,10 +95,10 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64, String> {
             Number(_) => stack.push(token),
             Operator(o) => {
                 let Some(Number(a)) = stack.pop() else {
-                    return Err("expected a number on the stack".to_string());
+                    return Err(Error::ExpectedNumberOnStack);
                 };
                 let Some(Number(b)) = stack.pop() else {
-                    return Err("expected a number on the stack".to_string());
+                    return Err(Error::ExpectedNumberOnStack);
                 };
                 match o {
                     Plus => stack.push(Number(a + b)),
@@ -110,42 +110,50 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64, String> {
             }
             Function(s) if s == "max" => {
                 let Some(Number(a)) = stack.pop() else {
-                    return Err("bad function call - expected a number on the stack".to_string());
+                    return Err(Error::BadFunctionCall(Box::new(
+                        Error::ExpectedNumberOnStack,
+                    )));
                 };
                 let Some(Number(b)) = stack.pop() else {
-                    return Err("bad function call - expected a number on the stack".to_string());
+                    return Err(Error::BadFunctionCall(Box::new(
+                        Error::ExpectedNumberOnStack,
+                    )));
                 };
                 stack.push(Number(if a > b { a } else { b }));
             }
             Function(s) if s == "min" => {
                 let Some(Number(a)) = stack.pop() else {
-                    return Err("bad function call - expected a number on the stack".to_string());
+                    return Err(Error::BadFunctionCall(Box::new(
+                        Error::ExpectedNumberOnStack,
+                    )));
                 };
                 let Some(Number(b)) = stack.pop() else {
-                    return Err("bad function call - expected a number on the stack".to_string());
+                    return Err(Error::BadFunctionCall(Box::new(
+                        Error::ExpectedNumberOnStack,
+                    )));
                 };
                 stack.push(Number(if a < b { a } else { b }));
             }
             Function(s) if s == "cos" => {
                 let Some(Number(a)) = stack.pop() else {
-                    return Err("expected a number on the stack".to_string());
+                    return Err(Error::ExpectedNumberOnStack);
                 };
                 stack.push(Number(a.cos()))
             }
             Function(s) if s == "sin" => {
                 let Some(Number(a)) = stack.pop() else {
-                    return Err("expected a number on the stack".to_string());
+                    return Err(Error::ExpectedNumberOnStack);
                 };
                 stack.push(Number(a.sin()))
             }
-            _ => return Err(format!("Unknown function: {token:?}")),
+            _ => return Err(Error::UnknownFunction(token)),
         }
     }
 
     if let [Number(a)] = stack[..] {
         return Ok(a);
     }
-    Err("bad expression".to_string())
+    Err(Error::BadExpression)
 }
 
 fn main() {

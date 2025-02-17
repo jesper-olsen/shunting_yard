@@ -3,6 +3,8 @@ use std::str::Chars;
 
 use OperatorType::*;
 
+use crate::error::{Error, Result};
+
 #[derive(PartialEq, Debug)]
 pub enum OperatorType {
     Plus,
@@ -122,7 +124,7 @@ impl Scanner<'_> {
         }
     }
 
-    fn number(&mut self) -> Result<Token, String> {
+    fn number(&mut self) -> Result<Token> {
         self.parse_digits();
         if let Some('.') = self.text.peek(0) {
             if let Some('0'..='9') = self.text.peek(1) {
@@ -134,12 +136,12 @@ impl Scanner<'_> {
         let n = self
             .lexeme
             .parse::<f64>()
-            .map_err(|e| format!("Failed to parse number ({}): {}", self.lexeme, e))?;
+            .map_err(|_| Error::ErrorParseNumber(self.lexeme.to_string()))?;
 
         Ok(Token::Number(n))
     }
 
-    fn identifier(&mut self) -> Result<Token, String> {
+    fn identifier(&mut self) -> Result<Token> {
         while let Some(ch) = self.text.peek(0) {
             if is_alpha(ch) || ch.is_ascii_digit() {
                 self.advance();
@@ -149,11 +151,11 @@ impl Scanner<'_> {
         }
         match self.lexeme.as_str() {
             "min" | "max" | "sin" | "cos" => Ok(Token::Function(mem::take(&mut self.lexeme))),
-            _ => Err("unknown function".to_string()),
+            _ => Err(Error::UnknownFunctionType),
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, String> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>> {
         let mut tokens = Vec::new();
         loop {
             self.skip_whitespace();
@@ -171,7 +173,7 @@ impl Scanner<'_> {
                 '^' => Token::Operator(Exp),
                 _ if is_alpha(ch) => self.identifier()?,
                 _ if ch.is_ascii_digit() => self.number()?,
-                _ => return Err(format!("Unexpected character: '{ch}'.")),
+                _ => return Err(Error::UnexpectedChar(ch)),
             });
             self.lexeme.clear();
         }
