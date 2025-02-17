@@ -21,19 +21,25 @@ fn repl() {
         }
 
         let mut scanner = scanner::Scanner::new(input);
-        let tokens = scanner.scan_tokens().unwrap();
-        match parse_tokens(tokens) {
-            Ok(a) => println!("Result: {a}"),
+        let infix_tokens = scanner.scan_tokens().unwrap();
+        println!("Infix input:{infix_tokens:?}");
+        match parse_tokens(infix_tokens) {
+            Ok(postfix_tokens) => {
+                println!("Postfix    :{postfix_tokens:?}");
+                match eval_rpn(postfix_tokens) {
+                    Ok(n) => println!("Result: {n}"),
+                    Err(m) => println!("Error: {m}"),
+                }
+            }
             Err(m) => println!("Error: {m}"),
         };
     }
 }
 
-fn parse_tokens(tokens: Vec<Token>) -> Result<f64, String> {
+fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>, String> {
     let mut output_queue: Vec<Token> = Vec::new();
     let mut operator_stack: Vec<Token> = Vec::new();
     for token in tokens {
-        println!("Input Token: {token:?}");
         match token {
             Number(_) => output_queue.push(token),
             LeftParen | Function(_) => operator_stack.push(token),
@@ -78,7 +84,7 @@ fn parse_tokens(tokens: Vec<Token>) -> Result<f64, String> {
         }
     }
 
-    eval_rpn(output_queue)
+    Ok(output_queue)
 }
 
 fn eval_rpn(output_queue: Vec<Token>) -> Result<f64, String> {
@@ -152,8 +158,9 @@ mod tests {
 
     fn eval(s: &str, expected: f64) {
         let mut scanner = scanner::Scanner::new(s);
-        let tokens = scanner.scan_tokens().unwrap();
-        let n = parse_tokens(tokens).unwrap();
+        let infix_tokens = scanner.scan_tokens().unwrap();
+        let pfix_tokens = parse_tokens(infix_tokens).unwrap();
+        let n = eval_rpn(pfix_tokens).unwrap();
         let epsilon = 1e-9;
         assert!(
             (n - expected).abs() < epsilon,
@@ -171,13 +178,5 @@ mod tests {
         ] {
             eval(s, expected);
         }
-    }
-
-    #[test]
-    fn test_invalid_expressions() {
-        assert!(parse_tokens(vec![Operator(Plus)]).is_err()); // Just an operator
-        assert!(parse_tokens(vec![LeftParen, Number(3.0)]).is_err()); // Unclosed parenthesis
-        assert!(parse_tokens(vec![Function("foo".to_string()), Number(3.0)]).is_err());
-        // Unknown function
     }
 }

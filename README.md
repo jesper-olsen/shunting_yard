@@ -13,43 +13,18 @@ Run
 ```% cargo run
 
 > 3-4
-Input Token: Number(3.0)
-Input Token: Operator(Minus)
-Input Token: Number(4.0)
+Infix input:[Number(3.0), Operator(Minus), Number(4.0)]
+Postfix    :[Number(3.0), Number(4.0), Operator(Minus)]
 Result: -1
 
 > sin ( max ( 2, 3 ) / 3 * 3.14 )
-Input Token: Function("sin")
-Input Token: LeftParen
-Input Token: Function("max")
-Input Token: LeftParen
-Input Token: Number(2.0)
-Input Token: Comma
-Input Token: Number(3.0)
-Input Token: RightParen
-Input Token: Operator(Divide)
-Input Token: Number(3.0)
-Input Token: Operator(Multiply)
-Input Token: Number(3.14)
-Input Token: RightParen
+Infix input:[Function("sin"), LeftParen, Function("max"), LeftParen, Number(2.0), Comma, Number(3.0), RightParen, Operator(Divide), Number(3.0), Operator(Multiply), Number(3.14), RightParen]
+Postfix    :[Number(2.0), Number(3.0), Number(3.0), Operator(Divide), Number(3.14), Operator(Multiply), Function("max"), Function("sin")]
 Result: 0.0015926529164868282
 
 > 3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3
-Input Token: Number(3.0)
-Input Token: Operator(Plus)
-Input Token: Number(4.0)
-Input Token: Operator(Multiply)
-Input Token: Number(2.0)
-Input Token: Operator(Divide)
-Input Token: LeftParen
-Input Token: Number(1.0)
-Input Token: Operator(Minus)
-Input Token: Number(5.0)
-Input Token: RightParen
-Input Token: Operator(Exp)
-Input Token: Number(2.0)
-Input Token: Operator(Exp)
-Input Token: Number(3.0)
+Infix input:[Number(3.0), Operator(Plus), Number(4.0), Operator(Multiply), Number(2.0), Operator(Divide), LeftParen, Number(1.0), Operator(Minus), Number(5.0), RightParen, Operator(Exp), Number(2.0), Operator(Exp), Number(3.0)]
+Postfix    :[Number(3.0), Number(4.0), Number(2.0), Operator(Multiply), Number(1.0), Number(5.0), Operator(Minus), Number(2.0), Number(3.0), Operator(Exp), Operator(Exp), Operator(Divide), Operator(Plus)]
 Result: 3.0001220703125
->
+
 ```
