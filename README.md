@@ -10,7 +10,8 @@ Implementation of Dijkstra's Shunting Yard Algorithm [1,2] for converting expres
 Run
 ===
 
-```% cargo run
+```
+% cargo run
 
 > 3-4
 Infix input:[Number(3.0), Operator(Minus), Number(4.0)]
