@@ -11,7 +11,7 @@ pub enum OperatorType {
     Minus,
     Multiply,
     Divide,
-    Exp,
+    Pow,
 }
 
 impl OperatorType {
@@ -20,7 +20,7 @@ impl OperatorType {
         match self {
             Plus | Minus => 2,
             Multiply | Divide => 3,
-            Exp => 4,
+            Pow => 4,
         }
     }
 
@@ -136,7 +136,7 @@ impl Scanner<'_> {
         let n = self
             .lexeme
             .parse::<f64>()
-            .map_err(|_| Error::ErrorParseNumber(self.lexeme.to_string()))?;
+            .map_err(|_| Error::ParseNumber(self.lexeme.to_string()))?;
 
         Ok(Token::Number(n))
     }
@@ -170,7 +170,7 @@ impl Scanner<'_> {
                 '+' => Token::Operator(Plus),
                 '*' => Token::Operator(Multiply),
                 '/' => Token::Operator(Divide),
-                '^' => Token::Operator(Exp),
+                '^' => Token::Operator(Pow),
                 _ if is_alpha(ch) => self.identifier()?,
                 _ if ch.is_ascii_digit() => self.number()?,
                 _ => return Err(Error::UnexpectedChar(ch)),

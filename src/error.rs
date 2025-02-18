@@ -1,7 +1,7 @@
+use crate::scanner::Token;
 use std::fmt;
 use std::io;
 
-use crate::scanner::Token;
 pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -10,18 +10,31 @@ pub enum Error {
     IO(io::Error),
     MismatchedParentheses,
     ExpectedNumberOnStack,
-    BadFunctionCall(Box<Error>),
     UnknownFunction(Token),
     UnknownFunctionType,
     BadExpression,
     UnexpectedChar(char),
-    ErrorParseNumber(String),
+    ParseNumber(String),
 }
-impl Error {
-    pub fn custom(val: impl std::fmt::Display) -> Self {
-        Self::custom(val.to_string())
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Custom(msg) => write!(f, "{}", msg),
+            Self::IO(err) => write!(f, "I/O error: {}", err),
+            Self::MismatchedParentheses => write!(f, "Mismatched parentheses"),
+            Self::ExpectedNumberOnStack => write!(f, "Expected number on stack"),
+            Self::UnknownFunction(tok) => write!(f, "Unknown function: {:?}", tok),
+            Self::UnknownFunctionType => write!(f, "Unknown function type"),
+            Self::BadExpression => write!(f, "Bad Expression"),
+            Self::UnexpectedChar(c) => write!(f, "Unexpected character: {}", c),
+            Self::ParseNumber(s) => write!(f, "Failed to parse number: {}", s),
+        }
     }
 }
+
 impl From<&str> for Error {
     fn from(value: &str) -> Self {
         Self::Custom(value.to_string())
@@ -31,10 +44,5 @@ impl From<&str> for Error {
 impl From<io::Error> for Error {
     fn from(value: io::Error) -> Self {
         Self::IO(value)
-    }
-}
-impl core::fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{self:?}")
     }
 }

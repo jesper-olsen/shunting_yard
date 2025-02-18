@@ -87,6 +87,23 @@ fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>> {
     Ok(output_queue)
 }
 
+fn pop_two(stack: &mut Vec<Token>) -> Result<(f64, f64)> {
+    let Some(Number(a)) = stack.pop() else {
+        return Err(Error::ExpectedNumberOnStack);
+    };
+    let Some(Number(b)) = stack.pop() else {
+        return Err(Error::ExpectedNumberOnStack);
+    };
+    Ok((b, a))
+}
+
+fn pop_one(stack: &mut Vec<Token>) -> Result<f64> {
+    let Some(Number(a)) = stack.pop() else {
+        return Err(Error::ExpectedNumberOnStack);
+    };
+    Ok(a)
+}
+
 fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
     // evaluate expression in Reverse Polish Notation
     let mut stack = Vec::new();
@@ -94,56 +111,29 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
         match token {
             Number(_) => stack.push(token),
             Operator(o) => {
-                let Some(Number(a)) = stack.pop() else {
-                    return Err(Error::ExpectedNumberOnStack);
-                };
-                let Some(Number(b)) = stack.pop() else {
-                    return Err(Error::ExpectedNumberOnStack);
-                };
+                let (a, b) = pop_two(&mut stack)?;
                 match o {
                     Plus => stack.push(Number(a + b)),
-                    Minus => stack.push(Number(b - a)),
+                    Minus => stack.push(Number(a - b)),
                     Multiply => stack.push(Number(a * b)),
-                    Divide => stack.push(Number(b / a)),
-                    Exp => stack.push(Number(b.powf(a))),
+                    Divide => stack.push(Number(a / b)),
+                    Pow => stack.push(Number(a.powf(b))),
                 }
             }
             Function(s) if s == "max" => {
-                let Some(Number(a)) = stack.pop() else {
-                    return Err(Error::BadFunctionCall(Box::new(
-                        Error::ExpectedNumberOnStack,
-                    )));
-                };
-                let Some(Number(b)) = stack.pop() else {
-                    return Err(Error::BadFunctionCall(Box::new(
-                        Error::ExpectedNumberOnStack,
-                    )));
-                };
+                let (a, b) = pop_two(&mut stack)?;
                 stack.push(Number(if a > b { a } else { b }));
             }
             Function(s) if s == "min" => {
-                let Some(Number(a)) = stack.pop() else {
-                    return Err(Error::BadFunctionCall(Box::new(
-                        Error::ExpectedNumberOnStack,
-                    )));
-                };
-                let Some(Number(b)) = stack.pop() else {
-                    return Err(Error::BadFunctionCall(Box::new(
-                        Error::ExpectedNumberOnStack,
-                    )));
-                };
+                let (a, b) = pop_two(&mut stack)?;
                 stack.push(Number(if a < b { a } else { b }));
             }
             Function(s) if s == "cos" => {
-                let Some(Number(a)) = stack.pop() else {
-                    return Err(Error::ExpectedNumberOnStack);
-                };
+                let a = pop_one(&mut stack)?;
                 stack.push(Number(a.cos()))
             }
             Function(s) if s == "sin" => {
-                let Some(Number(a)) = stack.pop() else {
-                    return Err(Error::ExpectedNumberOnStack);
-                };
+                let a = pop_one(&mut stack)?;
                 stack.push(Number(a.sin()))
             }
             _ => return Err(Error::UnknownFunction(token)),
