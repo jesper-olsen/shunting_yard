@@ -96,7 +96,7 @@ impl Scanner<'_> {
     fn skip_whitespace(&mut self) {
         loop {
             match self.text.peek(0) {
-                Some(' ' | '\r' | 't') => _ = self.text.advance(),
+                Some(' ' | '\r' | '\t') => _ = self.text.advance(),
                 Some('\n') => {
                     self.line += 1;
                     self.text.advance();
@@ -151,7 +151,7 @@ impl Scanner<'_> {
         }
         match self.lexeme.as_str() {
             "min" | "max" | "sin" | "cos" => Ok(Token::Function(mem::take(&mut self.lexeme))),
-            _ => Err(Error::UnknownFunction(self.lexeme.clone())),
+            _ => Err(Error::UnknownFunction(mem::take(&mut self.lexeme))),
         }
     }
 
