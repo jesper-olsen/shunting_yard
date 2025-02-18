@@ -24,8 +24,7 @@ Postfix    :[Number(2.0), Number(3.0), Number(3.0), Operator(Divide), Number(3.1
 Result: 0.0015926529164868282
 
 > 3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3
-Infix input:[Number(3.0), Operator(Plus), Number(4.0), Operator(Multiply), Number(2.0), Operator(Divide), LeftParen, Number(1.0), Operator(Minus), Number(5.0), RightParen, Operator(Exp), Number(2.0), Operator(Exp), Number(3.0)]
-Postfix    :[Number(3.0), Number(4.0), Number(2.0), Operator(Multiply), Number(1.0), Number(5.0), Operator(Minus), Number(2.0), Number(3.0), Operator(Exp), Operator(Exp), Operator(Divide), Operator(Plus)]
+Infix input:[Number(3.0), Operator(Plus), Number(4.0), Operator(Multiply), Number(2.0), Operator(Divide), LeftParen, Number(1.0), Operator(Minus), Number(5.0), RightParen, Operator(Pow), Number(2.0), Operator(Pow), Number(3.0)]
+Postfix    :[Number(3.0), Number(4.0), Number(2.0), Operator(Multiply), Number(1.0), Number(5.0), Operator(Minus), Number(2.0), Number(3.0), Operator(Pow), Operator(Pow), Operator(Divide), Operator(Plus)]
 Result: 3.0001220703125
-
 ```

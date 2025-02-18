@@ -21,7 +21,13 @@ fn repl() {
             continue;
         }
         let mut scanner = scanner::Scanner::new(input);
-        let infix_tokens = scanner.scan_tokens().unwrap();
+        let infix_tokens = match scanner.scan_tokens() {
+            Ok(tokens) => tokens,
+            Err(m) => {
+                println!("Error: {m}");
+                continue;
+            }
+        };
         println!("Infix input:{infix_tokens:?}");
         match parse_tokens(infix_tokens) {
             Ok(postfix_tokens) => {
@@ -120,23 +126,26 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
                     Pow => stack.push(Number(a.powf(b))),
                 }
             }
-            Function(s) if s == "max" => {
-                let (a, b) = pop_two(&mut stack)?;
-                stack.push(Number(if a > b { a } else { b }));
-            }
-            Function(s) if s == "min" => {
-                let (a, b) = pop_two(&mut stack)?;
-                stack.push(Number(if a < b { a } else { b }));
-            }
-            Function(s) if s == "cos" => {
-                let a = pop_one(&mut stack)?;
-                stack.push(Number(a.cos()))
-            }
-            Function(s) if s == "sin" => {
-                let a = pop_one(&mut stack)?;
-                stack.push(Number(a.sin()))
-            }
-            _ => return Err(Error::UnknownFunction(token)),
+            Function(s) => match s.as_str() {
+                "max" => {
+                    let (a, b) = pop_two(&mut stack)?;
+                    stack.push(Number(if a > b { a } else { b }));
+                }
+                "min" => {
+                    let (a, b) = pop_two(&mut stack)?;
+                    stack.push(Number(if a < b { a } else { b }));
+                }
+                "cos" => {
+                    let a = pop_one(&mut stack)?;
+                    stack.push(Number(a.cos()))
+                }
+                "sin" => {
+                    let a = pop_one(&mut stack)?;
+                    stack.push(Number(a.sin()))
+                }
+                _ => return Err(Error::UnknownFunction(s)),
+            },
+            Comma | LeftParen | RightParen => (),
         }
     }
 

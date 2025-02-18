@@ -10,8 +10,7 @@ pub enum Error {
     IO(io::Error),
     MismatchedParentheses,
     ExpectedNumberOnStack,
-    UnknownFunction(Token),
-    UnknownFunctionType,
+    UnknownFunction(String),
     BadExpression,
     UnexpectedChar(char),
     ParseNumber(String),
@@ -26,11 +25,10 @@ impl fmt::Display for Error {
             Self::IO(err) => write!(f, "I/O error: {}", err),
             Self::MismatchedParentheses => write!(f, "Mismatched parentheses"),
             Self::ExpectedNumberOnStack => write!(f, "Expected number on stack"),
-            Self::UnknownFunction(tok) => write!(f, "Unknown function: {:?}", tok),
-            Self::UnknownFunctionType => write!(f, "Unknown function type"),
+            Self::UnknownFunction(s) => write!(f, "Unknown function: {s}"),
             Self::BadExpression => write!(f, "Bad Expression"),
-            Self::UnexpectedChar(c) => write!(f, "Unexpected character: {}", c),
-            Self::ParseNumber(s) => write!(f, "Failed to parse number: {}", s),
+            Self::UnexpectedChar(c) => write!(f, "Unexpected character: {c}"),
+            Self::ParseNumber(s) => write!(f, "Failed to parse number: {s}"),
         }
     }
 }

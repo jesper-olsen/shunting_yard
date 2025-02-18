@@ -151,7 +151,7 @@ impl Scanner<'_> {
         }
         match self.lexeme.as_str() {
             "min" | "max" | "sin" | "cos" => Ok(Token::Function(mem::take(&mut self.lexeme))),
-            _ => Err(Error::UnknownFunctionType),
+            _ => Err(Error::UnknownFunction(self.lexeme.clone())),
         }
     }
 
