@@ -150,7 +150,7 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
                 }
                 _ => return Err(Error::UnknownFunction(s)),
             }),
-            Comma | LeftParen | RightParen => panic!("parser error"),
+            Comma | LeftParen | RightParen => return Err(Error::BadExpression),
         };
         stack.push(res)
     }
@@ -189,6 +189,7 @@ mod tests {
             ("sin ( max ( 2, 3 ) / 3 * 3.14 )", 0.0015926529164868282),
             ("3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3", 3.0001220703125),
             ("1 + cos(3.14159)*2", -1.0),
+            ("2^(2^3)", 256.0),
         ] {
             eval(s, expected);
         }
