@@ -8,7 +8,7 @@ fn repl() {
     let mut line = String::new();
     loop {
         print!("> ");
-        io::stdout().flush().unwrap();
+        let _ = io::stdout().flush();
 
         line.clear();
         if io::stdin().read_line(&mut line).is_err() {
@@ -49,15 +49,20 @@ fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Token>> {
         match token {
             Number(_) => output_queue.push(token),
             LeftParen | Function(_) => operator_stack.push(token),
-            RightParen => loop {
-                let Some(optoken) = operator_stack.pop() else {
-                    return Err(Error::MismatchedParentheses);
-                };
-                if optoken == LeftParen {
-                    break;
+            RightParen => {
+                loop {
+                    let Some(optoken) = operator_stack.pop() else {
+                        return Err(Error::MismatchedParentheses);
+                    };
+                    if optoken == LeftParen {
+                        break;
+                    }
+                    output_queue.push(optoken);
                 }
-                output_queue.push(optoken);
-            },
+                if let Some(Function(_)) = operator_stack.last() {
+                    output_queue.push(operator_stack.pop().unwrap());
+                }
+            }
             Operator(o1) => {
                 while let Some(Operator(o2)) = operator_stack.last() {
                     if o2.precedence() > o1.precedence()
@@ -114,39 +119,40 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
     // evaluate expression in Reverse Polish Notation
     let mut stack = Vec::new();
     for token in output_queue {
-        match token {
-            Number(_) => stack.push(token),
+        let res = match token {
+            Number(_) => token,
             Operator(o) => {
                 let (a, b) = pop_two(&mut stack)?;
-                match o {
-                    Plus => stack.push(Number(a + b)),
-                    Minus => stack.push(Number(a - b)),
-                    Multiply => stack.push(Number(a * b)),
-                    Divide => stack.push(Number(a / b)),
-                    Pow => stack.push(Number(a.powf(b))),
-                }
+                Number(match o {
+                    Plus => a + b,
+                    Minus => a - b,
+                    Multiply => a * b,
+                    Divide => a / b,
+                    Pow => a.powf(b),
+                })
             }
-            Function(s) => match s.as_str() {
+            Function(s) => Number(match s.as_str() {
                 "max" => {
                     let (a, b) = pop_two(&mut stack)?;
-                    stack.push(Number(if a > b { a } else { b }));
+                    if a > b { a } else { b }
                 }
                 "min" => {
                     let (a, b) = pop_two(&mut stack)?;
-                    stack.push(Number(if a < b { a } else { b }));
+                    if a < b { a } else { b }
                 }
                 "cos" => {
                     let a = pop_one(&mut stack)?;
-                    stack.push(Number(a.cos()))
+                    a.cos()
                 }
                 "sin" => {
                     let a = pop_one(&mut stack)?;
-                    stack.push(Number(a.sin()))
+                    a.sin()
                 }
                 _ => return Err(Error::UnknownFunction(s)),
-            },
-            Comma | LeftParen | RightParen => (),
-        }
+            }),
+            Comma | LeftParen | RightParen => panic!("parser error"),
+        };
+        stack.push(res)
     }
 
     if let [Number(a)] = stack[..] {
@@ -182,6 +188,7 @@ mod tests {
             ("3+4*2", 11.0),
             ("sin ( max ( 2, 3 ) / 3 * 3.14 )", 0.0015926529164868282),
             ("3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3", 3.0001220703125),
+            ("1 + cos(3.14159)*2", -1.0),
         ] {
             eval(s, expected);
         }
