@@ -77,7 +77,7 @@ pub struct Scanner<'a> {
 }
 
 impl Scanner<'_> {
-    pub fn new(source: &str) -> Scanner {
+    pub fn new(source: &str) -> Scanner<'_> {
         Scanner {
             text: Text::new(source),
             lexeme: String::new(),
@@ -126,11 +126,11 @@ impl Scanner<'_> {
 
     fn number(&mut self) -> Result<Token> {
         self.parse_digits();
-        if let Some('.') = self.text.peek(0) {
-            if let Some('0'..='9') = self.text.peek(1) {
-                self.advance(); // Consume '.'
-                self.parse_digits();
-            }
+        if let Some('.') = self.text.peek(0)
+            && let Some('0'..='9') = self.text.peek(1)
+        {
+            self.advance(); // Consume '.'
+            self.parse_digits();
         }
 
         let n = self

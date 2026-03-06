@@ -1,4 +1,3 @@
-use crate::scanner::Token;
 use std::fmt;
 use std::io;
 
