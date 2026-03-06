@@ -121,16 +121,23 @@ fn eval_rpn(output_queue: Vec<Token>) -> Result<f64> {
     for token in output_queue {
         let res = match token {
             Number(_) => token,
-            Operator(o) => {
-                let (a, b) = pop_two(&mut stack)?;
-                Number(match o {
-                    Plus => a + b,
-                    Minus => a - b,
-                    Multiply => a * b,
-                    Divide => a / b,
-                    Pow => a.powf(b),
-                })
-            }
+            Operator(o) => match o {
+                Negate => {
+                    let a = pop_one(&mut stack)?;
+                    Number(-a)
+                }
+                _ => {
+                    let (a, b) = pop_two(&mut stack)?;
+                    Number(match o {
+                        Plus => a + b,
+                        Minus => a - b,
+                        Multiply => a * b,
+                        Divide => a / b,
+                        Pow => a.powf(b),
+                        _ => unreachable!(),
+                    })
+                }
+            },
             Function(s) => Number(match s.as_str() {
                 "max" => {
                     let (a, b) = pop_two(&mut stack)?;
@@ -185,11 +192,13 @@ mod tests {
     fn test_eval() {
         for (s, expected) in [
             ("3-4", -1.0),
+            ("-5+3", -2.0),
             ("3+4*2", 11.0),
             ("sin ( max ( 2, 3 ) / 3 * 3.14 )", 0.0015926529164868282),
             ("3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3", 3.0001220703125),
             ("1 + cos(3.14159)*2", -1.0),
             ("2^(2^3)", 256.0),
+            ("2^2^3", 256.0),
         ] {
             eval(s, expected);
         }

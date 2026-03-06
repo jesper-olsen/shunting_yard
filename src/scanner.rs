@@ -1,9 +1,7 @@
+use crate::error::{Error, Result};
+use OperatorType::*;
 use std::mem;
 use std::str::Chars;
-
-use OperatorType::*;
-
-use crate::error::{Error, Result};
 
 #[derive(PartialEq, Debug)]
 pub enum OperatorType {
@@ -12,6 +10,7 @@ pub enum OperatorType {
     Multiply,
     Divide,
     Pow,
+    Negate,
 }
 
 impl OperatorType {
@@ -21,6 +20,7 @@ impl OperatorType {
             Plus | Minus => 2,
             Multiply | Divide => 3,
             Pow => 4,
+            Negate => 5,
         }
     }
 
@@ -74,6 +74,7 @@ pub struct Scanner<'a> {
     text: Text<'a>,
     lexeme: String,
     line: u32,
+    expecting_operand: bool,
 }
 
 impl Scanner<'_> {
@@ -82,6 +83,7 @@ impl Scanner<'_> {
             text: Text::new(source),
             lexeme: String::new(),
             line: 1,
+            expecting_operand: true,
         }
     }
 
@@ -166,13 +168,30 @@ impl Scanner<'_> {
                 '(' => Token::LeftParen,
                 ')' => Token::RightParen,
                 ',' => Token::Comma,
-                '-' => Token::Operator(Minus),
-                '+' => Token::Operator(Plus),
-                '*' => Token::Operator(Multiply),
-                '/' => Token::Operator(Divide),
-                '^' => Token::Operator(Pow),
-                _ if is_alpha(ch) => self.identifier()?,
-                _ if ch.is_ascii_digit() => self.number()?,
+                '-' => {
+                    if self.expecting_operand {
+                        Token::Operator(Negate)
+                    } else {
+                        Token::Operator(Minus)
+                    }
+                }
+                '+' | '*' | '/' | '^' => {
+                    self.expecting_operand = true;
+                    Token::Operator(match ch {
+                        '+' => Plus,
+                        '*' => Multiply,
+                        '/' => Divide,
+                        _ => Pow,
+                    })
+                }
+                _ if ch.is_ascii_digit() => {
+                    self.expecting_operand = false;
+                    self.number()?
+                }
+                _ if is_alpha(ch) => {
+                    self.expecting_operand = true; // Function expects '(' next
+                    self.identifier()?
+                }
                 _ => return Err(Error::UnexpectedChar(ch)),
             });
             self.lexeme.clear();
